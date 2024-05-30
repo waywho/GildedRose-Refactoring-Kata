@@ -7,37 +7,44 @@ class GildedRose
 
   def update_quality()
     items.each do |item|
-      item_spec = ItemSpecification.build(item)
-      item_spec.update_quality
-      item_spec.update_sell_in
+      updater = ItemUpdater.build(item)
+      updater.update_quality(item)
+      updater.update_sell_in(item)
     end
   end
 end
 
-class ItemSpecification
-  attr_accessor :item, :max_quality, :min_quality
+class ItemUpdater
+  MAX_QUALITY = 50
+  MIN_QUALITY = 0
 
   def self.build(item)
     case item.name
     when /\bAged Brie\b/
-      AgedBrie.new(item)
+      AgedBrieUpdater
     when /\bSulfuras\b/
-      Sulfuras.new(item)
+      SulfurasUpdater
     when /\bBackstage\b/
-      BackstagePass.new(item)
+      BackstagePassUpdater
+    when /\bConjured\b/
+      ConjuredUpdater
     else
-      self.new(item)
+      DefaultUpdater
     end
   end
 
-  def initialize(item)
-    @item = item
-    @max_quality = 50
-    @min_quality = 0
+  def self.update_quality(item)
+    raise NotImplementedError
   end
 
-  def update_quality
-    return if item.quality == min_quality
+  def self.update_sell_in(item)
+    item.sell_in -= 1
+  end
+end
+
+class DefaultUpdater < ItemUpdater
+  def self.update_quality(item)
+    return if item.quality == MIN_QUALITY
 
     if item.sell_in >= 0
       item.quality -= 1
@@ -45,41 +52,33 @@ class ItemSpecification
       item.quality -= 2
     end
 
-    item.quality = min_quality if item.quality < min_quality
-  end
-
-  def update_sell_in
-    item.sell_in -= 1
+    item.quality = MIN_QUALITY if item.quality < MIN_QUALITY
   end
 end
 
-class AgedBrie < ItemSpecification
-  def update_quality
-    return if item.quality == max_quality
+class AgedBrieUpdater < ItemUpdater
+  def self.update_quality(item)
+    return if item.quality == MAX_QUALITY
 
     item.quality += 1
   end
-
-  def update_sell_in
-    item.sell_in -= 1
-  end
 end
 
-class Sulfuras < ItemSpecification
-  def update_quality
+class SulfurasUpdater < ItemUpdater
+  def self.update_quality(item)
     item.quality
   end
 
-  def update_sell_in
+  def self.update_sell_in(item)
     item.sell_in
   end
 end
 
-class BackstagePass < ItemSpecification
-  def update_quality
+class BackstagePassUpdater < ItemUpdater
+  def self.update_quality(item)
     item.quality = 0 and return if item.sell_in < 0
 
-    return if item.quality == max_quality
+    return if item.quality == MAX_QUALITY
 
     if item.sell_in <= 5
       item.quality += 3
@@ -89,9 +88,15 @@ class BackstagePass < ItemSpecification
       item.quality += 1
     end
   end
+end
 
-  def update_sell_in
-    item.sell_in -= 1
+class ConjuredUpdater < ItemUpdater
+  def self.update_quality(item)
+    return if item.quality == MIN_QUALITY
+
+    item.quality -= 2
+
+    item.quality = 0 if item.quality < MIN_QUALITY
   end
 end
 
