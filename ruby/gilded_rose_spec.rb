@@ -31,6 +31,12 @@ describe GildedRose do
       expect(items[0].quality).to eq 26
     end
 
+    it "increases quality by 2 passed sell_in" do
+      items = [Item.new("Aged Brie", 0, 2)]
+      GildedRose.new(items).update_quality()
+      expect(items[0].quality).to eq 4
+    end
+
     it "does not increase quality to more than 50" do
       items = [Item.new("Aged Brie", 1, 50)]
       GildedRose.new(items).update_quality()
@@ -54,15 +60,25 @@ describe GildedRose do
 
   context "Backstage Passes" do
     it "increases quality by 1 if sell_in is more than 10" do
-      items = [Item.new("Backstage passes to a TAFKAL80ETC concert", 12, 22)]
-      GildedRose.new(items).update_quality()
-      expect(items[0].quality).to eq 23
-    end
-
-    it "increases quality by 2 if sell_in is less than 10" do
-      items = [Item.new("Backstage passes to a TAFKAL80ETC concert", 3, 22)]
+      items = [Item.new("Backstage passes to a TAFKAL80ETC concert", 13, 24)]
       GildedRose.new(items).update_quality()
       expect(items[0].quality).to eq 25
+    end
+
+    it "increases quality by 2 if sell_in is 10 or less" do
+      items = [Item.new("Backstage passes to a TAFKAL80ETC concert", 10, 22),
+      Item.new("Backstage passes to a TAFKAL80ETC concert", 9, 23)]
+      GildedRose.new(items).update_quality()
+      expect(items[0].quality).to eq 24
+      expect(items[1].quality).to eq 25
+    end
+
+    it "increases quality by 3 if sell_in is 5 or less" do
+      items = [Item.new("Backstage passes to a TAFKAL80ETC concert", 5, 22),
+      Item.new("Backstage passes to a TAFKAL80ETC concert", 4, 23)]
+      GildedRose.new(items).update_quality()
+      expect(items[0].quality).to eq 25
+      expect(items[1].quality).to eq 26
     end
 
     it "reduces quality to 0 if sell_in is negative" do

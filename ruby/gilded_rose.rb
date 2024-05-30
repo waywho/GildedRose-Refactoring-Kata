@@ -8,8 +8,7 @@ class GildedRose
   def update_quality()
     items.each do |item|
       updater = ItemUpdater.klass(item)
-      updater.update_quality(item)
-      updater.update_sell_in(item)
+      updater.update(item)
     end
   end
 end
@@ -33,17 +32,15 @@ class ItemUpdater
     end
   end
 
-  def self.update_quality(item)
+  def self.update(item)
     raise NotImplementedError
-  end
-
-  def self.update_sell_in(item)
-    item.sell_in -= 1
   end
 end
 
 class DefaultUpdater < ItemUpdater
-  def self.update_quality(item)
+  def self.update(item)
+    item.sell_in -= 1
+
     return if item.quality == MIN_QUALITY
 
     if item.sell_in >= 0
@@ -57,25 +54,32 @@ class DefaultUpdater < ItemUpdater
 end
 
 class AgedBrieUpdater < ItemUpdater
-  def self.update_quality(item)
+  def self.update(item)
+    item.sell_in -= 1
+
     return if item.quality == MAX_QUALITY
 
-    item.quality += 1
+    if item.sell_in < 0
+      item.quality += 2
+    else
+      item.quality += 1
+    end
+
+    item.quality = MAX_QUALITY if item.quality > MAX_QUALITY
   end
 end
 
 class SulfurasUpdater < ItemUpdater
-  def self.update_quality(item)
-    item.quality
-  end
-
-  def self.update_sell_in(item)
-    item.sell_in
+  def self.update(item)
+    item.sell_in = item.sell_in
+    item.quality = item.quality
   end
 end
 
 class BackstagePassUpdater < ItemUpdater
-  def self.update_quality(item)
+  def self.update(item)
+    item.sell_in -= 1
+
     item.quality = 0 and return if item.sell_in < 0
 
     return if item.quality == MAX_QUALITY
@@ -87,11 +91,15 @@ class BackstagePassUpdater < ItemUpdater
     else
       item.quality += 1
     end
+
+    item.quality = MAX_QUALITY if item.quality > MAX_QUALITY
   end
 end
 
 class ConjuredUpdater < ItemUpdater
-  def self.update_quality(item)
+  def self.update(item)
+    item.sell_in -= 1
+
     return if item.quality == MIN_QUALITY
 
     item.quality -= 2
