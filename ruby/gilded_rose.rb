@@ -7,7 +7,7 @@ class GildedRose
 
   def update_quality()
     items.each do |item|
-      updater = ItemUpdater.build(item)
+      updater = ItemUpdater.klass(item)
       updater.update_quality(item)
       updater.update_sell_in(item)
     end
@@ -18,7 +18,7 @@ class ItemUpdater
   MAX_QUALITY = 50
   MIN_QUALITY = 0
 
-  def self.build(item)
+  def self.klass(item)
     case item.name
     when /\bAged Brie\b/
       AgedBrieUpdater
