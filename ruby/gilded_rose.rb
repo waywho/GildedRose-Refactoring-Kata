@@ -1,67 +1,97 @@
 class GildedRose
+  attr_accessor :items
 
   def initialize(items)
     @items = items
   end
 
   def update_quality()
-    @items.each do |item|
-      if item.name != "Aged Brie" and item.name != "Backstage passes to a TAFKAL80ETC concert"
-        if item.quality > 0
-          if item.name != "Sulfuras, Hand of Ragnaros"
-            item.quality = reduce_quality(item)
-          end
-        end
-      else
-        if item.quality < 50
-          item.quality = increase_quality(item)
-          if item.name == "Backstage passes to a TAFKAL80ETC concert"
-            if item.sell_in < 11
-              if item.quality < 50
-                item.quality = increase_quality(item)
-              end
-            end
-            if item.sell_in < 6
-              if item.quality < 50
-                item.quality = increase_quality(item)
-              end
-            end
-          end
-        end
-      end
-      if item.name != "Sulfuras, Hand of Ragnaros"
-        item.sell_in = reduce_sell_in(item)
-      end
-      if item.sell_in < 0
-        if item.name != "Aged Brie"
-          if item.name != "Backstage passes to a TAFKAL80ETC concert"
-            if item.quality > 0
-              if item.name != "Sulfuras, Hand of Ragnaros"
-                item.quality = reduce_quality(item)
-              end
-            end
-          else
-            item.quality = reduce_quality(item, item.quality)
-          end
-        else
-          if item.quality < 50
-            item.quality = increase_quality(item)
-          end
-        end
-      end
+    items.each do |item|
+      item_spec = ItemSpecification.build(item)
+      item_spec.update_quality
+      item_spec.update_sell_in
+    end
+  end
+end
+
+class ItemSpecification
+  attr_accessor :item, :max_quality, :min_quality
+
+  def self.build(item)
+    case item.name
+    when /\bAged Brie\b/
+      AgedBrie.new(item)
+    when /\bSulfuras\b/
+      Sulfuras.new(item)
+    when /\bBackstage\b/
+      BackstagePass.new(item)
+    else
+      self.new(item)
     end
   end
 
-  def reduce_sell_in(item)
-    item.sell_in - 1
+  def initialize(item)
+    @item = item
+    @max_quality = 50
+    @min_quality = 0
   end
 
-  def reduce_quality(item, reduce_by = 1)
-    item.quality - reduce_by
+  def update_quality
+    return if item.quality == min_quality
+
+    if item.sell_in >= 0
+      item.quality -= 1
+    else
+      item.quality -= 2
+    end
+
+    item.quality = min_quality if item.quality < min_quality
   end
 
-  def increase_quality(item, increase_by = 1)
-    item.quality + increase_by
+  def update_sell_in
+    item.sell_in -= 1
+  end
+end
+
+class AgedBrie < ItemSpecification
+  def update_quality
+    return if item.quality == max_quality
+
+    item.quality += 1
+  end
+
+  def update_sell_in
+    item.sell_in -= 1
+  end
+end
+
+class Sulfuras < ItemSpecification
+  def update_quality
+    item.quality
+  end
+
+  def update_sell_in
+    item.sell_in
+  end
+end
+
+class BackstagePass < ItemSpecification
+  def update_quality
+    item.quality = 0 and return if item.sell_in < 0
+
+    return if item.quality == max_quality
+
+    if item.sell_in <= 5
+      item.quality += 3
+    elsif item.sell_in <= 10
+      item.quality += 2
+    else
+      item.quality += 1
+    end
+  end
+
+  def update_sell_in
+    item.sell_in -= 1
   end
 end
 
